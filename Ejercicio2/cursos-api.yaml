@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: API de Administración de Cursos Universitarios
+  description: API REST para gestionar los cursos que ofrece una universidad.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Servidor local de desarrollo
+
+tags:
+  - name: Cursos
+    description: Operaciones sobre el catálogo de cursos
+
+paths:
+  /cursos:
+    post:
+      tags: [Cursos]
+      summary: Crear un nuevo curso
+      operationId: crearCurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CursoRequest'
+            example:
+              nombre: Estructuras de Datos
+              codigo: EDD-101
+              creditos: 4
+              estado: ACTIVO
+      responses:
+        '201':
+          description: Curso creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CursoResponse'
+        '400':
+          description: Datos de la solicitud inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Ya existe un curso registrado con el mismo código
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags: [Cursos]
+      summary: Consultar todos los cursos
+      operationId: consultarCursos
+      responses:
+        '200':
+          description: Lista de cursos registrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CursoResponse'
+
+  /cursos/codigo/{codigo}:
+    get:
+      tags: [Cursos]
+      summary: Consultar curso por código
+      operationId: consultarCursoPorCodigo
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          description: Código único del curso
+          schema:
+            type: string
+          example: EDD-101
+      responses:
+        '200':
+          description: Curso encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CursoResponse'
+        '404':
+          description: No existe un curso con el código indicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cursos/{id}:
+    put:
+      tags: [Cursos]
+      summary: Actualizar un curso existente
+      operationId: actualizarCurso
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador del curso a actualizar
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CursoRequest'
+      responses:
+        '200':
+          description: Curso actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CursoResponse'
+        '400':
+          description: Datos de la solicitud inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No existe un curso con el id indicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Cursos]
+      summary: Eliminar un curso
+      operationId: eliminarCurso
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador del curso a eliminar
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '204':
+          description: Curso eliminado exitosamente (sin contenido)
+        '404':
+          description: No existe un curso con el id indicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    EstadoCurso:
+      type: string
+      description: Estado del curso
+      enum:
+        - ACTIVO
+        - INACTIVO
+        - CERRADO
+
+    CursoRequest:
+      type: object
+      required:
+        - nombre
+        - codigo
+        - creditos
+        - estado
+      properties:
+        nombre:
+          type: string
+          example: Estructuras de Datos
+        codigo:
+          type: string
+          example: EDD-101
+        creditos:
+          type: integer
+          example: 4
+        estado:
+          $ref: '#/components/schemas/EstadoCurso'
+
+    CursoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        nombre:
+          type: string
+          example: Estructuras de Datos
+        codigo:
+          type: string
+          example: EDD-101
+        creditos:
+          type: integer
+          example: 4
+        estado:
+          $ref: '#/components/schemas/EstadoCurso'
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 404
+        error:
+          type: string
+          example: Not Found
+        message:
+          type: string
+          example: No existe un curso con el código EDD-999
+        path:
+          type: string
+          example: /api/cursos/codigo/EDD-999
