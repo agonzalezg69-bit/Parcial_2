@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: API de Administración de Biblioteca
+  description: API REST para gestionar el catálogo de libros de una biblioteca.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Servidor local de desarrollo
+
+tags:
+  - name: Libros
+    description: Operaciones sobre el catálogo de libros
+
+paths:
+  /libros:
+    post:
+      tags: [Libros]
+      summary: Registrar un nuevo libro
+      operationId: registrarLibro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LibroRequest'
+            example:
+              titulo: Cien años de soledad
+              autor: Gabriel García Márquez
+              isbn: 978-0307474728
+              anioPublicacion: 1967
+              estado: DISPONIBLE
+      responses:
+        '201':
+          description: Libro registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibroResponse'
+        '400':
+          description: Datos de la solicitud inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Ya existe un libro registrado con el mismo ISBN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags: [Libros]
+      summary: Consultar todos los libros
+      operationId: consultarLibros
+      responses:
+        '200':
+          description: Lista de libros registrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LibroResponse'
+
+  /libros/titulo/{titulo}:
+    get:
+      tags: [Libros]
+      summary: Consultar libro(s) por título
+      operationId: consultarLibroPorTitulo
+      parameters:
+        - name: titulo
+          in: path
+          required: true
+          description: Título (o parte del título) del libro a buscar
+          schema:
+            type: string
+          example: Cien años de soledad
+      responses:
+        '200':
+          description: Libros que coinciden con el título buscado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LibroResponse'
+        '404':
+          description: No se encontró ningún libro con ese título
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /libros/{id}:
+    put:
+      tags: [Libros]
+      summary: Actualizar un libro existente
+      operationId: actualizarLibro
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador del libro a actualizar
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LibroRequest'
+      responses:
+        '200':
+          description: Libro actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibroResponse'
+        '400':
+          description: Datos de la solicitud inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No existe un libro con el id indicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Libros]
+      summary: Eliminar un libro
+      operationId: eliminarLibro
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador del libro a eliminar
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '204':
+          description: Libro eliminado exitosamente (sin contenido)
+        '404':
+          description: No existe un libro con el id indicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    EstadoLibro:
+      type: string
+      description: Estado de disponibilidad del libro
+      enum:
+        - DISPONIBLE
+        - PRESTADO
+        - EN_MANTENIMIENTO
+
+    LibroRequest:
+      type: object
+      required:
+        - titulo
+        - autor
+        - isbn
+        - anioPublicacion
+        - estado
+      properties:
+        titulo:
+          type: string
+          example: Cien años de soledad
+        autor:
+          type: string
+          example: Gabriel García Márquez
+        isbn:
+          type: string
+          example: 978-0307474728
+        anioPublicacion:
+          type: integer
+          example: 1967
+        estado:
+          $ref: '#/components/schemas/EstadoLibro'
+
+    LibroResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        titulo:
+          type: string
+          example: Cien años de soledad
+        autor:
+          type: string
+          example: Gabriel García Márquez
+        isbn:
+          type: string
+          example: 978-0307474728
+        anioPublicacion:
+          type: integer
+          example: 1967
+        estado:
+          $ref: '#/components/schemas/EstadoLibro'
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 404
+        error:
+          type: string
+          example: Not Found
+        message:
+          type: string
+          example: No existe un libro con el id 5
+        path:
+          type: string
+          example: /api/libros/5
